@@ -219,4 +219,3 @@ export class Celdas {
     return 'No se pudo conectar con el servicio. Comprueba la conexión y actualiza el listado antes de reintentar.';
   }
 }
-

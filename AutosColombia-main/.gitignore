@@ -62,3 +62,9 @@ Desktop.ini
 .history/
 *.swp
 *.swo
+
+# Imágenes de referencia sueltas en la raíz; conservar los recursos de frontend/public
+/*.[pP][nN][gG]
+/*.[jJ][pP][gG]
+/*.[jJ][pP][eE][gG]
+/*.[wW][eE][bB][pP]
