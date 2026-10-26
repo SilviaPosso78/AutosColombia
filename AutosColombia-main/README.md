@@ -1,5 +1,26 @@
 # Autos Colombia
 
+## Interfaz actual
+
+La aplicación Angular ofrece cinco secciones: **Inicio**, **Control de acceso**,
+**Operadores**, **Celdas** y **Vehículos**. Comparte una identidad visual en tonos
+marfil y dorado, con títulos serif, paneles adaptables y navegación responsive.
+
+En **Inicio**, la imagen principal aparece en un banner con movimiento lento; las
+tres tarjetas informativas entran de forma escalonada y tienen una interacción
+suave al pasar el cursor. En **Vehículos**, la fotografía del parqueadero permanece
+visible incluso cuando el formulario está cerrado. La imagen hace un acercamiento
+lento; al activar la creación, el formulario se muestra junto a ella. En **Operadores**
+y **Celdas**, los formularios de registro aparecen al pulsar **Nuevo operador** o
+**Nueva celda**; también se muestran al editar un registro. En Celdas, el formulario
+y el listado aprovechan el ancho disponible. Las animaciones respetan la preferencia
+del sistema para reducir movimiento.
+
+Las imágenes utilizadas por la interfaz están en `frontend/public/images/inicio.jpg`
+y `frontend/public/images/vehiculos.jpg`. Se copian al paquete de producción de Angular
+y no se excluyen mediante `.gitignore`. Las imágenes de referencia sueltas en la raíz
+del repositorio sí se ignoran.
+
 ## Pantalla Control de acceso
 
 Disponible en **Control de acceso** en la navegación y en
@@ -703,6 +724,7 @@ AutosColombia/
 │   └── requirements.txt       # Versiones exactas, incluidas las transitivas
 └── frontend/
     ├── src/app/               # Componentes y rutas Angular
+    ├── public/images/         # Imágenes utilizadas por Inicio y Vehículos
     ├── angular.json
     ├── tsconfig.json
     ├── package.json
@@ -891,9 +913,10 @@ La bienvenida permanece en **Inicio**. La ruta de pantalla `/gestion/vehiculos`
 es distinta de la ruta API `/vehiculos` para evitar conflictos con el proxy.
 
 - El listado usa páginas de 10 vehículos, ordenadas por id, con Anterior y Siguiente.
-- **Nuevo vehículo** abre un formulario reactivo con placa, marca, año, color y tipo.
-  Todos son obligatorios; el año es entero entre 1 y 9999. La placa se recorta y
-  convierte a mayúsculas. Los tipos son MOTO, AUTOMOVIL y CAMIONETA.
+- La fotografía del parqueadero se mantiene visible junto al listado. **Nuevo
+  vehículo** abre a su lado un formulario reactivo con placa, marca, año, color y
+  tipo. Todos son obligatorios; el año es entero entre 1 y 9999. La placa se recorta
+  y convierte a mayúsculas. Los tipos son MOTO, AUTOMOVIL y CAMIONETA.
 - **Editar** consulta la versión actual del vehículo y guarda mediante PATCH sin id.
 - **Eliminar** muestra una confirmación con placa, marca y año. Solo se envía DELETE
   al pulsar **Confirmar eliminación**; **Cancelar eliminación** no modifica datos.
@@ -1058,4 +1081,3 @@ de integración revirtieron sus transacciones. No se eliminaron registros previo
 Para esta modificación exclusivamente documental se revisan rutas, contratos y
 sintaxis de los bloques PowerShell; no se reinstalan dependencias, no se aplican
 migraciones y no se vuelven a ejecutar las suites ni las pruebas manuales.
-
