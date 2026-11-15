@@ -1,10 +1,11 @@
 from functools import wraps
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app.models import Vehiculo
+from app.models import Cliente, Pago, Vehiculo
+from app.services.pago import hoy_bogota
 from app.schemas.vehiculo import VehiculoActualizar, VehiculoCrear
 
 
@@ -26,6 +27,8 @@ def database_operation(operation):
             constraint = getattr(getattr(error.orig, "diag", None), "constraint_name", None)
             if code == "23505" and constraint == "uq_vehiculo_placa":
                 raise VehiculoError(409, "Ya existe un vehículo con esa placa.") from None
+            if code == "23503" and constraint == "fk_vehiculo_cliente":
+                raise VehiculoError(404, "Cliente no encontrado.") from None
             if code == "23503":
                 raise VehiculoError(409, "El vehículo tiene registros relacionados y no se puede eliminar.") from None
             if code in {"23502", "23514"}:
@@ -44,8 +47,14 @@ def find_vehicle(session: Session, vehicle_id: int) -> Vehiculo:
     return vehicle
 
 
+def validate_client(session: Session, client_id: int | None) -> None:
+    if client_id is not None and session.get(Cliente, client_id) is None:
+        raise VehiculoError(404, "Cliente no encontrado.")
+
+
 @database_operation
 def create_vehicle(session: Session, data: VehiculoCrear) -> Vehiculo:
+    validate_client(session, data.cliente_id)
     vehicle = Vehiculo(**data.model_dump())
     session.add(vehicle)
     session.commit()
@@ -68,7 +77,17 @@ def get_vehicle(session: Session, vehicle_id: int) -> Vehiculo:
 @database_operation
 def update_vehicle(session: Session, vehicle_id: int, data: VehiculoActualizar) -> Vehiculo:
     vehicle = find_vehicle(session, vehicle_id)
-    for key, value in data.model_dump(exclude_unset=True).items():
+    changes = data.model_dump(exclude_unset=True)
+    if changes.get("tipo", vehicle.tipo) != vehicle.tipo:
+        session.execute(text("LOCK TABLE pago IN SHARE ROW EXCLUSIVE MODE"))
+        contrato = session.scalar(select(Pago.id).where(
+            Pago.vehiculo_id == vehicle.id, Pago.fin >= hoy_bogota(),
+        ).limit(1))
+        if contrato is not None:
+            raise VehiculoError(409, "El vehículo tiene una mensualidad contratada. Conserva su tipo hasta finalizar ese periodo.")
+    if "cliente_id" in changes:
+        validate_client(session, changes["cliente_id"])
+    for key, value in changes.items():
         setattr(vehicle, key, value)
     session.commit()
     session.refresh(vehicle)

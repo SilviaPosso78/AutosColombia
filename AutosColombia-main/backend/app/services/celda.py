@@ -54,9 +54,10 @@ def create_cell(session: Session, data: CeldaCrear) -> Celda:
 
 
 @database_operation
-def list_cells(session: Session, offset: int, limit: int) -> dict:
-    total = session.scalar(select(func.count()).select_from(Celda))
-    items = list(session.scalars(select(Celda).order_by(Celda.id).offset(offset).limit(limit)))
+def list_cells(session: Session, offset: int, limit: int, codigo: str | None = None) -> dict:
+    criteria = [] if not codigo else [Celda.codigo == codigo.strip().upper()]
+    total = session.scalar(select(func.count()).select_from(Celda).where(*criteria))
+    items = list(session.scalars(select(Celda).where(*criteria).order_by(Celda.codigo).offset(offset).limit(limit)))
     return {"items": items, "total": total, "offset": offset, "limit": limit}
 
 

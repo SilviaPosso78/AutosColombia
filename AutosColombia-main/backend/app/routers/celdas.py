@@ -22,8 +22,9 @@ def list_all(
     session: DatabaseSession,
     offset: Annotated[int, Query(ge=0, le=9223372036854775807)] = 0,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    codigo: Annotated[str | None, Query(max_length=80)] = None,
 ):
-    return service.list_cells(session, offset, limit)
+    return service.list_cells(session, offset, limit, codigo)
 
 
 @router.get("/{id}", response_model=CeldaRespuesta)

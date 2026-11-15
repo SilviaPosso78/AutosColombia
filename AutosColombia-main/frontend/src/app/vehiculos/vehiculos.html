@@ -16,6 +16,14 @@
   @if (actionError()) {
     <p class="notice error" role="alert">{{ actionError() }}</p>
   }
+  @if (clientesError()) {
+    <p class="notice error" role="alert">
+      {{ clientesError() }}
+      <button type="button" (click)="loadClientes()" [disabled]="clientesLoading()">
+        Actualizar clientes
+      </button>
+    </p>
+  }
 
   <div class="vehicle-workspace" [class.has-form]="showForm()">
     @if (showForm()) {
@@ -73,6 +81,30 @@
                   }
                 </select>
                 <span class="field-error" id="tipo-error">{{ fieldError('tipo') }}</span>
+              </div>
+              <div class="field">
+                <label for="cliente_id">Cliente (opcional)</label>
+                <select
+                  id="cliente_id"
+                  formControlName="cliente_id"
+                  [disabled]="clientesLoading() || !!clientesError()"
+                >
+                  <option [ngValue]="null">Sin cliente asociado</option>
+                  @for (client of clientes(); track client.id) {
+                    <option [ngValue]="client.id">
+                      {{ client.nombre }} · {{ client.documento }}
+                    </option>
+                  }
+                </select>
+                @if (clientesLoading()) {
+                  <span class="field-error">Cargando clientes…</span>
+                } @else if (!clientesError() && !clientes().length) {
+                  <span class="field-error"
+                    >Aún no hay clientes; puedes continuar sin asociarlo.</span
+                  >
+                } @else {
+                  <span class="field-error"></span>
+                }
               </div>
             </div>
             <div class="actions">
@@ -157,6 +189,7 @@
               <th scope="col">Año</th>
               <th scope="col">Color</th>
               <th scope="col">Tipo</th>
+              <th scope="col">Cliente</th>
               <th scope="col">Acciones</th>
             </tr>
           </thead>
@@ -170,6 +203,7 @@
                 <td>
                   <span class="type-tag">{{ vehicle.tipo }}</span>
                 </td>
+                <td>{{ clienteNombre(vehicle.cliente_id) }}</td>
                 <td class="row-actions">
                   <button
                     type="button"

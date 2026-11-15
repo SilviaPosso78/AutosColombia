@@ -1,0 +1,264 @@
+﻿<section class="management users-management" aria-labelledby="users-title">
+  <header class="heading">
+    <div>
+      <h1 id="users-title">Crear usuarios</h1>
+      <p>Registra las cuentas del equipo y asigna sus permisos de acceso.</p>
+    </div>
+  </header>
+  <section class="panel registration-panel" aria-labelledby="register-title">
+    <header class="registration-heading">
+      <h2 id="register-title">Registrar una cuenta</h2>
+      <p>Completa los datos de la persona que utilizará el sistema.</p>
+    </header>
+    <form [formGroup]="form" (ngSubmit)="guardar()" novalidate [attr.aria-busy]="saving()">
+      <fieldset [disabled]="saving()">
+        <legend class="sr-only">Datos de la cuenta</legend>
+        <fieldset class="role-options">
+          <legend>Permisos de la cuenta</legend>
+          <label class="role-option" [class.selected]="form.controls.rol.value === 'OPERADOR'"
+            ><input type="radio" formControlName="rol" value="OPERADOR" /><span
+              ><strong>Operador</strong
+              ><small>Consulta vehículos y registra entradas y salidas.</small></span
+            ></label
+          >
+          <label class="role-option" [class.selected]="form.controls.rol.value === 'ADMINISTRADOR'"
+            ><input type="radio" formControlName="rol" value="ADMINISTRADOR" /><span
+              ><strong>Administrador</strong
+              ><small>Crea cuentas y administra las celdas.</small></span
+            ></label
+          >
+        </fieldset>
+        <div class="form-section">
+          <h3>Datos de la persona</h3>
+          <div class="form-grid">
+            <div class="field full-width">
+              <label for="user-person">Nombre completo</label
+              ><input
+                id="user-person"
+                formControlName="nombre"
+                autocomplete="name"
+                maxlength="200"
+                [attr.aria-invalid]="form.controls.nombre.touched && form.controls.nombre.invalid"
+                aria-describedby="user-person-error"
+              />
+              @if (form.controls.nombre.touched && form.controls.nombre.invalid) {
+                <span id="user-person-error" class="field-error"
+                  >Introduce el nombre de la persona.</span
+                >
+              }
+            </div>
+            @if (form.controls.rol.value === 'OPERADOR') {
+              <div class="field full-width">
+                <label for="user-profile">Perfil del empleado</label
+                ><select id="user-profile" formControlName="operador_id">
+                  <option value="">Crear un perfil nuevo</option>
+                  @for (perfil of operadores(); track perfil.id) {
+                    <option [value]="perfil.id">{{ perfil.nombre }}</option>
+                  }
+                </select>
+                @if (perfilesLoading()) {
+                  <span class="hint" role="status">Consultando empleados…</span>
+                }
+                @if (perfilesError()) {
+                  <span class="field-error" role="alert"
+                    >{{ perfilesError() }}
+                    <button
+                      class="inline-retry"
+                      type="button"
+                      (click)="cargarPerfiles()"
+                      [disabled]="perfilesLoading()"
+                    >
+                      Reintentar
+                    </button></span
+                  >
+                }
+              </div>
+              @if (!form.controls.operador_id.value) {
+                <div class="field full-width">
+                  <label for="user-phone">Teléfono</label
+                  ><input
+                    id="user-phone"
+                    formControlName="telefono"
+                    type="tel"
+                    autocomplete="tel"
+                    maxlength="200"
+                    [attr.aria-invalid]="
+                      form.controls.telefono.touched && form.controls.telefono.invalid
+                    "
+                    aria-describedby="user-phone-error"
+                  />
+                  @if (form.controls.telefono.touched && form.controls.telefono.invalid) {
+                    <span id="user-phone-error" class="field-error"
+                      >Introduce el teléfono del empleado.</span
+                    >
+                  }
+                </div>
+              }
+            }
+          </div>
+        </div>
+        <div class="form-section">
+          <h3>Datos de acceso</h3>
+          <div class="form-grid">
+            <div class="field full-width">
+              <label for="user-name">Usuario de acceso</label
+              ><input
+                id="user-name"
+                formControlName="usuario"
+                autocomplete="off"
+                autocapitalize="none"
+                spellcheck="false"
+                maxlength="80"
+                [attr.aria-invalid]="form.controls.usuario.touched && form.controls.usuario.invalid"
+                aria-describedby="user-name-hint user-name-error"
+              /><span id="user-name-hint" class="hint"
+                >De 3 a 80 caracteres. Letras, números, punto, guion y guion bajo.</span
+              >
+              @if (form.controls.usuario.touched && form.controls.usuario.invalid) {
+                <span id="user-name-error" class="field-error"
+                  >Introduce un nombre de usuario válido.</span
+                >
+              }
+            </div>
+            <div class="field">
+              <label for="user-password">Contraseña</label
+              ><input
+                id="user-password"
+                formControlName="password"
+                [type]="showPassword() ? 'text' : 'password'"
+                autocomplete="new-password"
+                maxlength="128"
+                [attr.aria-invalid]="
+                  form.controls.password.touched && form.controls.password.invalid
+                "
+                aria-describedby="user-password-error password-help"
+              />
+              @if (form.controls.password.touched && form.controls.password.invalid) {
+                <span id="user-password-error" class="field-error"
+                  >Usa una contraseña de 8 a 128 caracteres.</span
+                >
+              }
+            </div>
+            <div class="field">
+              <label for="user-confirm">Confirmar contraseña</label
+              ><input
+                id="user-confirm"
+                formControlName="confirmPassword"
+                [type]="showPassword() ? 'text' : 'password'"
+                autocomplete="new-password"
+                maxlength="128"
+                [attr.aria-invalid]="
+                  form.controls.confirmPassword.touched &&
+                  (form.controls.confirmPassword.invalid || form.hasError('passwordsMismatch'))
+                "
+                aria-describedby="user-confirm-error"
+              />
+              @if (
+                form.controls.confirmPassword.touched &&
+                (form.controls.confirmPassword.invalid || form.hasError('passwordsMismatch'))
+              ) {
+                <span id="user-confirm-error" class="field-error"
+                  >Las contraseñas deben coincidir.</span
+                >
+              }
+            </div>
+          </div>
+          <div class="password-options">
+            <label
+              ><input
+                type="checkbox"
+                [checked]="showPassword()"
+                (change)="showPassword.set($any($event.target).checked)"
+              />
+              Mostrar contraseñas</label
+            ><span id="password-help" class="hint">Mínimo 8 caracteres.</span>
+          </div>
+        </div>
+        @if (error()) {
+          <p role="alert" class="notice error">{{ error() }}</p>
+        }
+        <div class="registration-actions">
+          <button type="submit" class="primary" [disabled]="saving()">
+            {{ saving() ? 'Creando cuenta…' : 'Crear cuenta' }}
+          </button>
+        </div>
+      </fieldset>
+    </form>
+    @if (success()) {
+      <p role="status" class="notice success">{{ success() }}</p>
+    }
+  </section>
+  <section class="panel list users-list" [attr.aria-busy]="loading()">
+    <div class="list-heading">
+      <h2>
+        Usuarios registrados <span class="user-count">{{ total() }}</span>
+      </h2>
+      <button type="button" (click)="cargar(offset())" [disabled]="loading()">
+        Actualizar listado
+      </button>
+    </div>
+    @if (listError()) {
+      <p role="alert" class="notice error">{{ listError() }}</p>
+    }
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Usuario</th>
+            <th scope="col">Nombre</th>
+            <th scope="col">Rol</th>
+            <th scope="col">Sesiones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (user of items(); track user.id) {
+            <tr>
+              <th scope="row">{{ user.usuario }}</th>
+              <td>{{ user.nombre }}</td>
+              <td>
+                <span class="role-label" [class.admin]="user.rol === 'ADMINISTRADOR'">{{
+                  user.rol === 'ADMINISTRADOR' ? 'Administrador' : 'Operador'
+                }}</span>
+              </td>
+              <td>
+                <button type="button" (click)="revocar(user)" [disabled]="saving()">
+                  Revocar sesiones
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="4">
+                {{
+                  loading()
+                    ? 'Cargando usuarios…'
+                    : listError()
+                      ? 'Listado pendiente de consulta.'
+                      : 'No hay usuarios registrados.'
+                }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <nav class="pagination" aria-label="Paginación de usuarios">
+      <span>{{ total() }} usuarios</span>
+      <div class="actions">
+        <button
+          type="button"
+          (click)="cargar(offset() - 10)"
+          [disabled]="loading() || offset() === 0"
+        >
+          Anterior</button
+        ><button
+          type="button"
+          (click)="cargar(offset() + 10)"
+          [disabled]="loading() || offset() + 10 >= total()"
+        >
+          Siguiente
+        </button>
+      </div>
+    </nav>
+  </section>
+</section>

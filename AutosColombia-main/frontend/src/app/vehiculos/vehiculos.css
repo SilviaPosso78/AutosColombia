@@ -137,6 +137,10 @@
   font-weight: 700;
 }
 
+.vehicle-management .list table {
+  min-width: 800px;
+}
+
 .vehicle-management .type-tag {
   display: inline-block;
   padding: 4px 9px;

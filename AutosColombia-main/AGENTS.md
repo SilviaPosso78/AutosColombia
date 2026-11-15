@@ -5,28 +5,44 @@ instalar y ejecutar los proyectos en Windows está en `README.md`.
 
 ## Estructura
 
+- `backend/app/services/auth.py` y `routers/auth.py`: login, cuentas por rol y sesiones revocables; migración 0006.
 - `backend/app/main.py`: aplicación FastAPI; `GET /health` devuelve HTTP 200 y
   `{"status": "ok"}`.
-- `backend/tests/`: pruebas con pytest y `TestClient`.
 - `backend/app/config.py`: carga `backend/.env` por ruta absoluta; el entorno tiene prioridad.
 - `backend/app/database.py`: motor SQLAlchemy y sesiones bajo demanda con psycopg.
 - `backend/check_db.py`: comprobación explícita mediante `SELECT 1`, sin DDL.
-- `backend/app/models.py`: Base, Vehiculo, Celda y Operador; tablas en singular y minúsculas.
+- `backend/app/models.py`: Base, Vehiculo, Cliente, Celda, Operador, Estancia, Tiquete, Pago y AvisoMensualidad; tablas en singular y minúsculas.
 - `backend/app/schemas/vehiculo.py`: validación Pydantic y contratos de respuesta.
 - `backend/app/routers/vehiculos.py`: rutas CRUD con APIRouter.
 - `backend/app/services/vehiculo.py`: lógica de vehículos, transacciones y errores públicos.
+- `backend/app/schemas/cliente.py`, `app/routers/clientes.py` y `app/services/cliente.py`:
+  CRUD de clientes; un cliente puede asociarse a varios vehículos.
 - `backend/app/schemas/celda.py`, `app/routers/celdas.py` y `app/services/celda.py`:
-  CRUD de celdas con código normalizado y tipo libre obligatorio.
+  administración de celdas protegida para ADMINISTRADOR, con CRUD y búsqueda.
+- `backend/app/catalogo_celdas.py` y `backend/configurar_celdas.py`: catálogo fijo
+  de 80 espacios, C01–C70 y M01–M10; preparación explícita y transaccional de datos.
+- `backend/app/services/tiquete.py` y `schemas/tiquete.py`: tiquetes persistidos,
+  reimpresión estable y reporte de movimientos con filtros y totales coherentes.
+- `backend/app/services/pago.py`, `schemas/pago.py` y `routers/pagos.py`: pagos
+  manuales, vigencia inclusiva y capacidad por periodo.
+- `backend/app/services/notificacion.py` y `services/whatsapp.py`: cola de avisos
+  a cinco días y en el vencimiento, integración Cloud API y confirmaciones firmadas.
 - `backend/migrations/`: revisiones Alembic; `backend/alembic.ini` reutiliza la configuración privada.
 - `backend/.env.example`: plantilla pública; conservar cualquier `.env` existente y privado.
-- `backend/requirements.txt`: dependencias de ejecución y pruebas con versiones
+- `backend/requirements.txt`: dependencias de la aplicacion con versiones
   exactas, incluidas las transitivas.
 - `backend/.venv/`: entorno virtual local, excluido de Git.
 - `frontend/src/app/`: componentes standalone, configuración y rutas Angular.
-- `frontend/src/app/home/`: bienvenida y estado de salud de la API.
+- `frontend/src/app/tiquete/`: documento digital e imprimible de una entrada.
+- `frontend/src/app/movimientos/`: historial bajo demanda y acceso a tiquetes.
+- `frontend/src/app/pagos/`: registro, mensualidades, historial y avisos.
+- `frontend/src/app/home/`: dashboard de ocupación y disponibilidad real, actualizado cada 10 segundos,
+  y estado de salud de la API.
 - `frontend/src/app/vehiculos/`: formulario reactivo y listado paginado de vehículos.
-- `frontend/src/app/celdas/`: gestión de celdas; `CeldasService` reutiliza la base de API.
+- `frontend/src/app/clientes/`: gestión paginada de clientes y datos de contacto.
+- `frontend/src/app/celdas/`: administración del catálogo por administrador.
 - `frontend/src/app/services/api.service.ts`: llamadas HTTP y base de API centralizadas.
+- `frontend/src/app/services/clientes.service.ts`: CRUD de clientes y catálogo paginado.
 - `frontend/src/app/models/vehiculo.ts`: contratos de solicitudes, respuestas y tipos.
 - `frontend/src/styles.css`: estilos globales; estilos de componentes en CSS.
 - `frontend/public/`: recursos estáticos que sí se versionan.
@@ -60,20 +76,21 @@ instalar y ejecutar los proyectos en Windows está en `README.md`.
   espacios, componentes standalone, CSS y el enrutamiento existente.
 - Mantener `strict` y `strictTemplates` activados; no desactivar comprobaciones
   para ocultar errores de tipos o de plantillas.
-- Añadir o ajustar pruebas cuando cambie el comportamiento. Los endpoints nuevos
-  deben probar su estado HTTP y su respuesta esperada.
+- Por solicitud del usuario, no incluir tests automatizados ni sus herramientas.
+  Verificar mediante compilacion y comprobaciones manuales; no generar tests
+  salvo nueva solicitud.
 - Conservar el contrato de `/health` salvo que se solicite cambiarlo.
 - Mantener restricciones de integridad en modelos y migraciones. Nunca aplicar
   migraciones a la base del usuario sin autorización; para revisión usar
   `python -m alembic -c alembic.ini upgrade head --sql` con el intérprete de `.venv`.
 - Mantener `/health` independiente de PostgreSQL. No conectar ni crear tablas al
   importar módulos. No registrar credenciales, URL de conexión ni errores crudos
-  del controlador. Verificar PostgreSQL con `backend/check_db.py`; las pruebas
-  simuladas no prueban que exista una conexión local real.
+  del controlador. Verificar PostgreSQL con `backend/check_db.py`.
 - La pantalla consulta `/health` mediante `HttpClient` al cargarse. El proxy de
-  desarrollo en `frontend/proxy.conf.json` dirige `/health`, `/vehiculos` y
-  `/vehiculos/**` a `127.0.0.1:8000`. La pantalla de gestión usa `/gestion/vehiculos`
-  para no colisionar con las rutas API. Las llamadas pasan por `ApiService`.
+  desarrollo en `frontend/proxy.conf.json` dirige `/health`, `/clientes`,
+  `/clientes/**`, `/vehiculos` y `/vehiculos/**` a `127.0.0.1:8000`. La pantalla
+  de gestión usa `/gestion/vehiculos` para no colisionar con las rutas API.
+  Las llamadas pasan por los servicios Angular y usan rutas relativas.
   Mantener rutas relativas y documentar cualquier integración que se añada.
 
 ## Secretos y archivos excluidos
@@ -93,7 +110,7 @@ secretos. `frontend/.gitignore` añade las exclusiones generadas por Angular CLI
   necesaria sin tokens.
 - `.gitignore` no deja de rastrear archivos ya versionados; si se detecta un
   secreto existente, informar del hallazgo sin reproducir su valor.
-- Conservar fuentes, pruebas, documentación, configuraciones compartidas,
+- Conservar fuentes, documentacion, configuraciones compartidas,
   `requirements.txt` y `package-lock.json`.
 
 ## Comandos de verificación (PowerShell)
@@ -108,20 +125,13 @@ Push-Location backend
 try {
     .\.venv\Scripts\python.exe -m pip check
     if ($LASTEXITCODE -ne 0) { throw 'Dependencias del backend inconsistentes.' }
-    .\.venv\Scripts\python.exe -m pytest -q
-    if ($LASTEXITCODE -ne 0) { throw 'Fallaron las pruebas del backend.' }
 } finally {
     Pop-Location
 }
 ```
 
-La prueba actual comprueba `/health` sin iniciar un servidor externo. Starlette
-puede emitir un aviso de deprecación sobre `httpx`; distinguirlo de un fallo.
-
-Las pruebas de integración de vehículos se habilitan con `RUN_POSTGRES_TESTS=1`
-y requieren `autos_colombia` con la revisión `0001`. Usan rollback exterior y
-savepoints: no crear tablas ni alterar migraciones para probar. Los valores de
-las secuencias pueden avanzar. Ver `backend/README.md` para comandos completos.
+Comprobar la conexión con `backend/check_db.py` sin modificar datos y revisar
+las operaciones en la aplicación y la documentación interactiva `/docs`.
 
 ### Frontend
 
@@ -130,8 +140,6 @@ Push-Location frontend
 try {
     npm.cmd run build
     if ($LASTEXITCODE -ne 0) { throw 'Falló la compilación del frontend.' }
-    npm.cmd test -- --watch=false
-    if ($LASTEXITCODE -ne 0) { throw 'Fallaron las pruebas del frontend.' }
 } finally {
     Pop-Location
 }
@@ -139,7 +147,7 @@ try {
 
 Ejecutar las comprobaciones del proyecto afectado. Para cambios solo de
 documentación o exclusiones, revisar rutas, comandos y reglas sin reinstalar
-dependencias ni ejecutar suites ajenas al cambio. Informar qué se comprobó y
+dependencias. Informar qué se comprobó y
 cualquier limitación pendiente.
 
 Cuando se haya inicializado Git, revisar antes de preparar un commit:

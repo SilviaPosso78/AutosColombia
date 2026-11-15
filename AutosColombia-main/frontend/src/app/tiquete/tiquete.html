@@ -1,0 +1,61 @@
+<section class="ticket-page" aria-labelledby="ticket-title">
+  <header class="ticket-actions">
+    <div>
+      <h1 id="ticket-title">Tiquete de entrada</h1>
+      <a routerLink="/control-acceso">Volver al control de acceso</a>
+    </div>
+    @if (datos()) {
+      <button type="button" (click)="imprimir()">Imprimir tiquete</button>
+    }
+  </header>
+  @if (loading()) {
+    <p class="ticket-message" role="status">Cargando tiquete…</p>
+  }
+  @if (error()) {
+    <div class="ticket-message" role="alert">
+      <p>{{ error() }}</p>
+      <button type="button" (click)="cargar()">Reintentar</button>
+    </div>
+  }
+  @if (datos(); as tiquete) {
+    <article class="ticket-paper" aria-label="Tiquete digital de entrada">
+      <header class="ticket-brand">
+        <h2>Autos Colombia</h2>
+        <p>Tiquete de entrada</p>
+        <strong>{{ tiquete.numero }}</strong>
+      </header>
+      <p class="plate">{{ tiquete.placa }}</p>
+      <dl>
+        <div>
+          <dt>Tipo de vehículo</dt>
+          <dd>{{ tiquete.tipo_vehiculo }}</dd>
+        </div>
+        <div>
+          <dt>Ingreso</dt>
+          <dd>{{ fecha(tiquete.entrada) }}<small>Hora de Bogotá</small></dd>
+        </div>
+        <div>
+          <dt>Celda</dt>
+          <dd>{{ tiquete.celda_codigo }}</dd>
+        </div>
+        <div>
+          <dt>Puerta</dt>
+          <dd>{{ tiquete.puerta }}</dd>
+        </div>
+        <div>
+          <dt>Operador</dt>
+          <dd>
+            {{ tiquete.operador_nombre }}<small>#{{ tiquete.operador_id }}</small>
+          </dd>
+        </div>
+      </dl>
+      @if (tiquete.reconstruido) {
+        <p class="reconstructed">
+          Tiquete reconstruido para una entrada anterior a este módulo, con los datos guardados
+          actualmente.
+        </p>
+      }
+      <footer>Conserva este tiquete durante tu estancia.</footer>
+    </article>
+  }
+</section>

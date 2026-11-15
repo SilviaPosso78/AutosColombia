@@ -2,7 +2,9 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
+import { Cliente } from '../models/cliente';
 import { ApiService } from '../services/api.service';
+import { ClientesService } from '../services/clientes.service';
 import {
   ErrorApi,
   TIPOS_VEHICULO,
@@ -27,6 +29,7 @@ type Field = keyof VehiculoCrear;
 })
 export class Vehiculos {
   private readonly api = inject(ApiService);
+  private readonly clientesApi = inject(ClientesService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly fb = inject(FormBuilder);
   readonly types = TIPOS_VEHICULO;
@@ -46,7 +49,11 @@ export class Vehiculos {
       Validators.required,
       (control) => (this.types.includes(control.value) ? null : { type: true }),
     ]),
+    cliente_id: this.fb.control<number | null>(null),
   });
+  readonly clientes = signal<Cliente[]>([]);
+  readonly clientesLoading = signal(false);
+  readonly clientesError = signal('');
   readonly items = signal<Vehiculo[]>([]);
   readonly total = signal(0);
   readonly offset = signal(0);
@@ -65,6 +72,35 @@ export class Vehiculos {
 
   constructor() {
     this.load();
+    this.loadClientes();
+  }
+
+  loadClientes(): void {
+    if (this.clientesLoading()) return;
+    this.clientesLoading.set(true);
+    this.clientesError.set('');
+    this.clientesApi
+      .all()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (clients) => {
+          this.clientes.set(clients);
+          this.clientesLoading.set(false);
+        },
+        error: () => {
+          this.clientesLoading.set(false);
+          this.clientes.set([]);
+          this.clientesError.set(
+            'No se pudieron cargar los clientes. Reintenta o registra el vehículo sin asociarlo.',
+          );
+        },
+      });
+  }
+
+  clienteNombre(clienteId: number | null): string {
+    if (clienteId === null) return 'Sin cliente asociado';
+    const cliente = this.clientes().find((item) => item.id === clienteId);
+    return cliente ? cliente.nombre : `Cliente #${clienteId}`;
   }
 
   load(offset = this.offset()): void {
@@ -156,6 +192,7 @@ export class Vehiculos {
       marca: value.marca.trim(),
       modelo: value.modelo!,
       tipo: value.tipo as TipoVehiculo,
+      cliente_id: value.cliente_id,
     };
     this.form.controls.placa.setValue(payload.placa);
     this.saving.set(true);
@@ -178,6 +215,11 @@ export class Vehiculos {
         if (error.status === 409)
           this.setFieldError('placa', 'Ya existe un vehículo con esa placa.');
         const body = error.error as ErrorApi | null;
+        if (error.status === 404 && body?.detail === 'Cliente no encontrado.')
+          this.setFieldError(
+            'cliente_id',
+            'El cliente seleccionado ya no existe. Actualiza clientes.',
+          );
         if (error.status === 422 && Array.isArray(body?.detail)) {
           for (const issue of body.detail) {
             const field = issue.loc.at(-1);
@@ -233,7 +275,10 @@ export class Vehiculos {
   }
 
   private errorMessage(error: HttpErrorResponse, deleting = false): string {
-    if (error.status === 404) return 'El vehículo ya no existe. Actualiza el listado.';
+    if (error.status === 404)
+      return error.error?.detail === 'Cliente no encontrado.'
+        ? 'El cliente seleccionado ya no existe. Actualiza los clientes.'
+        : 'El vehículo ya no existe. Actualiza el listado.';
     if (error.status === 409)
       return deleting
         ? 'No se puede eliminar: el vehículo tiene registros relacionados o un conflicto con otros datos.'

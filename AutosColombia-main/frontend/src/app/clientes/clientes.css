@@ -1,0 +1,42 @@
+:host {
+  display: block;
+}
+
+.clients-management .list {
+  grid-column: 1 / -1;
+}
+
+.clients-management .list table {
+  table-layout: fixed;
+}
+
+.clients-management .list th:first-child,
+.clients-management .list td:first-child {
+  width: 17%;
+}
+
+.clients-management .list th:nth-child(2),
+.clients-management .list td:nth-child(2) {
+  width: 23%;
+}
+
+.clients-management .list th:nth-child(3),
+.clients-management .list td:nth-child(3) {
+  width: 18%;
+}
+
+.clients-management .list th:nth-child(4),
+.clients-management .list td:nth-child(4) {
+  width: 22%;
+}
+
+.clients-management .list th:last-child,
+.clients-management .list td:last-child {
+  width: 20%;
+}
+
+@media (max-width: 700px) {
+  .clients-management .list table {
+    min-width: 760px;
+  }
+}

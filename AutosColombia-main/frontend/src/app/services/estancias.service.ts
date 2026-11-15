@@ -1,11 +1,17 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { EMPTY, Observable, expand, reduce, throwError, timeout } from 'rxjs';
-import { Celda } from '../models/celda';
+import { EMPTY, Observable, expand, map, reduce, throwError, timeout } from 'rxjs';
+import { Celda, OcupacionCelda } from '../models/celda';
 import { Operador } from '../models/operador';
-import { EntradaCrear, SalidaCrear, Estancia, EstadoVehiculo } from '../models/estancia';
+import {
+  EntradaCrear,
+  EntradaRegistrada,
+  SalidaCrear,
+  Estancia,
+  EstadoVehiculo,
+} from '../models/estancia';
+import { FiltrosMovimientos, MovimientosPagina, Tiquete } from '../models/tiquete';
 import { API_BASE_URL } from './api.service';
-import { CeldasService } from './celdas.service';
 import { OperadoresService } from './operadores.service';
 
 interface Pagina<T> {
@@ -19,11 +25,27 @@ interface Pagina<T> {
 export class EstanciasService {
   private readonly http = inject(HttpClient);
   private readonly base = `${inject(API_BASE_URL)}/estancias`;
-  private readonly cells = inject(CeldasService);
   private readonly operators = inject(OperadoresService);
 
   entrada(data: EntradaCrear) {
-    return this.http.post<Estancia>(`${this.base}/entrada`, data).pipe(timeout(15000));
+    return this.http.post<EntradaRegistrada>(`${this.base}/entrada`, data).pipe(timeout(15000));
+  }
+  ocupacion() {
+    return this.http.get<OcupacionCelda[]>(`${this.base}/ocupacion`).pipe(timeout(15000));
+  }
+  tiquete(estanciaId: number) {
+    return this.http.get<Tiquete>(`${this.base}/tiquetes/${estanciaId}`).pipe(timeout(15000));
+  }
+  movimientos(filtros: FiltrosMovimientos, offset = 0, limit = 10) {
+    let params = new HttpParams().set('offset', offset).set('limit', limit);
+    for (const [campo, valor] of Object.entries(filtros)) {
+      if (valor !== null && valor !== '') {
+        params = params.set(campo, campo === 'placa' ? String(valor).trim().toUpperCase() : valor);
+      }
+    }
+    return this.http
+      .get<MovimientosPagina>(`${this.base}/movimientos`, { params })
+      .pipe(timeout(15000));
   }
   salida(data: SalidaCrear) {
     return this.http.post<Estancia>(`${this.base}/salida`, data).pipe(timeout(15000));
@@ -34,7 +56,9 @@ export class EstanciasService {
       .pipe(timeout(15000));
   }
   celdas(): Observable<Celda[]> {
-    return this.todas((offset) => this.cells.list(offset, 100));
+    return this.ocupacion().pipe(
+      map((items) => items.map(({ id, codigo, tipo }) => ({ id, codigo, tipo }))),
+    );
   }
   operadores(): Observable<Operador[]> {
     return this.todas((offset) => this.operators.list(offset, 100));

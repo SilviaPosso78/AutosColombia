@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.schemas.celda import CeldaRespuesta
 from app.schemas.vehiculo import Placa, VehiculoRespuesta
+from app.schemas.tiquete import TiqueteRespuesta
 
 Identificador = Annotated[int, Field(strict=True, ge=1, le=9223372036854775807)]
 
@@ -38,6 +39,10 @@ class EstanciaRespuesta(BaseModel):
         return value.astimezone(timezone.utc) if value is not None else None
 
 
+class EntradaRegistrada(EstanciaRespuesta):
+    tiquete: TiqueteRespuesta
+
+
 class EstanciaAbiertaRespuesta(EstanciaRespuesta):
     celda: CeldaRespuesta
 
@@ -46,3 +51,9 @@ class EstadoVehiculoRespuesta(BaseModel):
     vehiculo: VehiculoRespuesta
     esta_dentro: bool
     estancia: EstanciaAbiertaRespuesta | None
+
+
+class OcupacionCeldaRespuesta(CeldaRespuesta):
+    ocupada: bool
+    placa: str | None
+    entrada: datetime | None

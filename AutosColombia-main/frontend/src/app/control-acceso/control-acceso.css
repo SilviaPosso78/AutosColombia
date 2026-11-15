@@ -1,3 +1,66 @@
 :host {
   display: block;
 }
+
+.cell-sectors {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.cell-sector {
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid #d8c8a7;
+  border-radius: 0.6rem;
+}
+
+.cell-sector h3 {
+  margin-top: 0;
+}
+
+.cell-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1rem;
+  border: 1px solid #8db6a0;
+  border-left: 5px solid #2c714d;
+  border-radius: 0.6rem;
+  background: #f0f8f2;
+  color: #214d36;
+  overflow-wrap: anywhere;
+  text-align: left;
+  align-items: flex-start;
+  font: inherit;
+}
+.cell:disabled {
+  opacity: 1;
+  cursor: default;
+}
+.cell:not(:disabled):hover {
+  background: #e0f1e5;
+  border-color: #2c714d;
+}
+.cell.selected {
+  outline: 3px solid #2c714d;
+  outline-offset: 2px;
+}
+.cell:focus-visible {
+  outline: 3px solid #254b80;
+  outline-offset: 3px;
+}
+.cell.occupied {
+  border-color: #cda48b;
+  border-left-color: #9b492c;
+  background: #fff2e9;
+  color: #783a24;
+}

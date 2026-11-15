@@ -11,9 +11,9 @@ export class CeldasService {
   private readonly base = inject(API_BASE_URL);
   private readonly cells = `${this.base}/celdas`;
 
-  list(offset: number, limit: number) {
+  list(offset: number, limit: number, codigo = '') {
     return this.http
-      .get<CeldasPagina>(this.cells, { params: { offset, limit } })
+      .get<CeldasPagina>(this.cells, { params: { offset, limit, codigo } })
       .pipe(timeout(15000));
   }
   get(id: number) {
@@ -29,4 +29,3 @@ export class CeldasService {
     return this.http.delete<void>(`${this.cells}/${id}`).pipe(timeout(15000));
   }
 }
-

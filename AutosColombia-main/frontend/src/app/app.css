@@ -53,6 +53,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  flex-wrap: wrap;
 }
 
 .site-header nav a {
@@ -81,6 +82,23 @@
 
 main {
   min-height: calc(100vh - 250px);
+}
+
+@media print {
+  .page-shell:has(app-tiquete) {
+    width: 100%;
+    min-height: 0;
+    padding: 0;
+  }
+
+  .page-shell:has(app-tiquete) .site-header,
+  .page-shell:has(app-tiquete) .site-footer {
+    display: none;
+  }
+
+  .page-shell:has(app-tiquete) main {
+    min-height: 0;
+  }
 }
 
 .site-footer {
@@ -189,4 +207,26 @@ main {
   main {
     min-height: auto;
   }
+}
+
+.session-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
+.page-shell:has(app-login) {
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+.page-shell:has(app-login) > .site-header,
+.page-shell:has(app-login) > .site-footer {
+  display: none;
+}
+.page-shell:has(app-login) > main {
+  min-height: 100svh;
 }

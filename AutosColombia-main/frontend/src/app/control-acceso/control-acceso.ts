@@ -2,11 +2,14 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, ValidatorFn, Validators } from '@angular/forms';
-import { forkJoin } from 'rxjs';
-import { Celda } from '../models/celda';
+import { RouterLink } from '@angular/router';
+import { forkJoin, Subscription, timer } from 'rxjs';
+import { Celda, OcupacionCelda } from '../models/celda';
 import { Operador } from '../models/operador';
 import { EstadoVehiculo } from '../models/estancia';
+import { Tiquete } from '../models/tiquete';
 import { EstanciasService } from '../services/estancias.service';
+import { AuthService } from '../auth/auth.service';
 
 const nonBlank: ValidatorFn = (c) =>
   typeof c.value === 'string' && c.value.trim() ? null : { required: true };
@@ -14,15 +17,33 @@ const placa = (value: string) => value.trim().toUpperCase();
 
 @Component({
   selector: 'app-control-acceso',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   templateUrl: './control-acceso.html',
   styleUrl: './control-acceso.css',
 })
 export class ControlAcceso {
   private readonly api = inject(EstanciasService);
+  readonly auth = inject(AuthService);
   private readonly fb = inject(FormBuilder);
   private readonly destroy = inject(DestroyRef);
   private version = 0;
+  private ocupacionRequest?: Subscription;
+  readonly ocupacion = signal<OcupacionCelda[]>([]);
+  readonly ocupacionError = signal('');
+  readonly ocupacionLoading = signal(false);
+  readonly ultimaActualizacion = signal('');
+  readonly libres = computed(() => this.ocupacion().filter((c) => !c.ocupada));
+  readonly ocupadas = computed(() => this.ocupacion().filter((c) => c.ocupada));
+  readonly sectores = computed(() =>
+    [
+      { id: 'motos', titulo: 'Motocicletas', tipo: 'Motocicletas' },
+      { id: 'carros', titulo: 'Automóviles y camionetas', tipo: 'Automóviles y camionetas' },
+    ].map((sector) => {
+      const celdas = this.ocupacion().filter((celda) => celda.tipo === sector.tipo);
+      const libres = celdas.filter((celda) => !celda.ocupada).length;
+      return { ...sector, celdas, libres, ocupadas: celdas.length - libres };
+    }),
+  );
   readonly entrada = this.fb.group({
     placa: this.fb.nonNullable.control('', nonBlank),
     celda_id: this.fb.control<number | null>(null, Validators.required),
@@ -44,6 +65,7 @@ export class ControlAcceso {
   readonly errorConsulta = signal('');
   readonly exitoEntrada = signal('');
   readonly exitoSalida = signal('');
+  readonly ultimoTiquete = signal<Tiquete | null>(null);
 
   constructor() {
     this.consulta.controls.placa.valueChanges
@@ -51,10 +73,57 @@ export class ControlAcceso {
       .subscribe(() => {
         this.version++;
         this.estado.set(null);
+        this.consulta.controls.operador_id.reset();
         this.errorConsulta.set('');
         this.exitoSalida.set('');
       });
     this.cargarCatalogos();
+    this.actualizarOcupacion();
+    timer(10000, 10000)
+      .pipe(takeUntilDestroyed(this.destroy))
+      .subscribe(() => {
+        if (!this.saving() && !this.ocupacionLoading()) this.actualizarOcupacion();
+      });
+  }
+
+  seleccionarCelda(id: number): void {
+    if (
+      this.busy() ||
+      this.catalogLoading() ||
+      this.catalogError() ||
+      this.ocupacionLoading() ||
+      this.ocupacionError()
+    )
+      return;
+    if (!this.libres().some((celda) => celda.id === id)) return;
+    this.entrada.controls.celda_id.setValue(id);
+    this.entrada.controls.celda_id.markAsTouched();
+  }
+
+  actualizarOcupacion(): void {
+    this.ocupacionRequest?.unsubscribe();
+    this.ocupacionLoading.set(true);
+    this.ocupacionRequest = this.api
+      .ocupacion()
+      .pipe(takeUntilDestroyed(this.destroy))
+      .subscribe({
+        next: (celdas) => {
+          this.ocupacion.set(celdas);
+          this.ocupacionError.set('');
+          this.ocupacionLoading.set(false);
+          this.ultimaActualizacion.set(this.fecha(new Date().toISOString()));
+          const selected = this.entrada.controls.celda_id.value;
+          if (!celdas.some((c) => c.id === selected && !c.ocupada)) {
+            this.entrada.controls.celda_id.reset();
+          }
+        },
+        error: () => {
+          this.ocupacionLoading.set(false);
+          this.ocupacionError.set(
+            'No se pudo verificar la ocupación. Actualiza para consultar la disponibilidad.',
+          );
+        },
+      });
   }
 
   cargarCatalogos(): void {
@@ -70,6 +139,8 @@ export class ControlAcceso {
         next: (data) => {
           this.celdas.set(data.celdas);
           this.operadores.set(data.operadores);
+          this.entrada.controls.operador_id.setValue(this.auth.usuario()?.operador_id ?? null);
+          this.completarOperadorSalida();
           this.catalogLoading.set(false);
         },
         error: () => {
@@ -86,7 +157,12 @@ export class ControlAcceso {
   registrarEntrada(): void {
     if (this.busy() || this.catalogLoading() || this.catalogError()) return;
     this.entrada.markAllAsTouched();
-    if (this.entrada.invalid) return;
+    if (this.entrada.invalid || this.ocupacionError() || this.ocupacionLoading()) return;
+    if (!this.libres().some((c) => c.id === this.entrada.controls.celda_id.value)) {
+      this.errorEntrada.set('Selecciona una celda libre.');
+      this.actualizarOcupacion();
+      return;
+    }
     const raw = this.entrada.getRawValue();
     const data = {
       placa: placa(raw.placa),
@@ -99,6 +175,7 @@ export class ControlAcceso {
     this.saving.set(true);
     this.errorEntrada.set('');
     this.exitoEntrada.set('');
+    this.ultimoTiquete.set(null);
     this.version++;
     this.estado.set(null);
     this.api
@@ -107,12 +184,15 @@ export class ControlAcceso {
       .subscribe({
         next: (result) => {
           this.saving.set(false);
+          this.actualizarOcupacion();
+          this.ultimoTiquete.set(result.tiquete ?? null);
           this.exitoEntrada.set(
             `Entrada registrada: ${data.placa}, celda ${codigo}, ${this.fecha(result.entrada)}.`,
           );
         },
         error: (error) => {
           this.saving.set(false);
+          this.actualizarOcupacion();
           this.errorEntrada.set(this.mensaje(error));
         },
       });
@@ -126,6 +206,7 @@ export class ControlAcceso {
     this.consulta.controls.placa.setValue(value, { emitEvent: false });
     const version = ++this.version;
     this.estado.set(null);
+    this.consulta.controls.operador_id.reset();
     this.errorConsulta.set('');
     this.querying.set(true);
     this.api
@@ -134,7 +215,9 @@ export class ControlAcceso {
       .subscribe({
         next: (result) => {
           this.querying.set(false);
-          if (version === this.version) this.estado.set(result);
+          if (version !== this.version) return;
+          this.estado.set(result);
+          this.completarOperadorSalida();
         },
         error: (error) => {
           this.querying.set(false);
@@ -144,6 +227,12 @@ export class ControlAcceso {
             );
         },
       });
+  }
+
+  private completarOperadorSalida(): void {
+    const operadorId = this.auth.usuario()?.operador_id;
+    const operador = this.operadores().find((item) => item.id === operadorId);
+    this.consulta.controls.operador_id.setValue(operador?.id ?? null);
   }
 
   registrarSalida(): void {
@@ -168,6 +257,7 @@ export class ControlAcceso {
       .subscribe({
         next: (result) => {
           this.saving.set(false);
+          this.actualizarOcupacion();
           this.estado.set(null);
           if (version !== this.version) return;
           this.exitoSalida.set(
@@ -177,6 +267,7 @@ export class ControlAcceso {
         },
         error: (error) => {
           this.saving.set(false);
+          this.actualizarOcupacion();
           this.estado.set(null);
           if (version === this.version)
             this.errorConsulta.set(

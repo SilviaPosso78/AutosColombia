@@ -68,3 +68,10 @@ Desktop.ini
 /*.[jJ][pP][gG]
 /*.[jJ][pP][eE][gG]
 /*.[wW][eE][bB][pP]
+
+# Respaldos y archivos auxiliares locales
+*.bak
+*.orig
+*.rej
+*.dump
+*.backup

@@ -1,5 +1,6 @@
 import { Celda } from './celda';
 import { Vehiculo } from './vehiculo';
+import { Tiquete } from './tiquete';
 
 export interface EntradaCrear {
   placa: string;
@@ -23,4 +24,7 @@ export interface EstadoVehiculo {
   vehiculo: Vehiculo;
   esta_dentro: boolean;
   estancia: (Estancia & { celda: Celda }) | null;
+}
+export interface EntradaRegistrada extends Estancia {
+  tiquete: Tiquete;
 }

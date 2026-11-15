@@ -1,0 +1,30 @@
+:host {
+  display: block;
+}
+.movement-management > .panel {
+  grid-column: 1 / -1;
+}
+.movement-management .form-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+small {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 400;
+}
+.table-scroll a {
+  white-space: nowrap;
+  text-underline-offset: 4px;
+}
+@media (max-width: 800px) {
+  .movement-management .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 500px) {
+  .movement-management .form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

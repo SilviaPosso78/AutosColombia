@@ -5,6 +5,7 @@ from pydantic import AfterValidator, BaseModel, BeforeValidator, ConfigDict, Fie
 from app.models import required_text
 
 
+Identificador = Annotated[int, Field(strict=True, ge=1, le=9223372036854775807)]
 Texto = Annotated[str, BeforeValidator(lambda value: required_text(value, "El campo"))]
 Placa = Annotated[Texto, AfterValidator(str.upper)]
 Anio = Annotated[int, Field(strict=True, ge=1, le=9999)]
@@ -22,6 +23,7 @@ class VehiculoCrear(BaseModel):
     modelo: Anio
     marca: Texto
     tipo: TipoVehiculo
+    cliente_id: Identificador | None = None
 
 
 class VehiculoActualizar(BaseModel):
@@ -32,11 +34,12 @@ class VehiculoActualizar(BaseModel):
     modelo: Anio | None = None
     marca: Texto | None = None
     tipo: TipoVehiculo | None = None
+    cliente_id: Identificador | None = None
 
     @field_validator("*", mode="before")
     @classmethod
-    def reject_null(cls, value):
-        if value is None:
+    def reject_null(cls, value, info):
+        if value is None and info.field_name != "cliente_id":
             raise ValueError("Los campos enviados no pueden ser nulos.")
         return value
 

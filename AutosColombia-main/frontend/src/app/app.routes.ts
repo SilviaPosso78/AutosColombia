@@ -1,24 +1,87 @@
 import { Routes } from '@angular/router';
+import { authGuard, loginGuard } from './auth/auth.guard';
 
 export const routes: Routes = [
   {
+    path: 'cuenta/password',
+    canActivate: [authGuard],
+    title: 'Cambiar contraseña | Autos Colombia',
+    loadComponent: () => import('./auth/password').then((m) => m.Password),
+  },
+  {
+    path: 'login',
+    canActivate: [loginGuard],
+    title: 'Iniciar sesión | Autos Colombia',
+    loadComponent: () => import('./auth/login').then((m) => m.Login),
+  },
+  {
+    path: 'gestion/usuarios',
+    canActivate: [authGuard],
+    data: { rol: 'ADMINISTRADOR' },
+    title: 'Crear usuarios | Autos Colombia',
+    loadComponent: () => import('./usuarios/usuarios').then((m) => m.Usuarios),
+  },
+  {
+    path: 'tiquetes/:id',
+    canActivate: [authGuard],
+    data: { rol: 'OPERADOR' },
+    title: 'Tiquete de entrada | Autos Colombia',
+    loadComponent: () => import('./tiquete/tiquete').then((m) => m.Tiquete),
+  },
+  {
+    path: 'gestion/movimientos',
+    canActivate: [authGuard],
+    data: { rol: 'OPERADOR' },
+    title: 'Movimientos | Autos Colombia',
+    loadComponent: () => import('./movimientos/movimientos').then((m) => m.Movimientos),
+  },
+  {
+    path: 'gestion/pagos',
+    canActivate: [authGuard],
+    data: { rol: 'OPERADOR' },
+    title: 'Pagos y mensualidades | Autos Colombia',
+    loadComponent: () => import('./pagos/pagos').then((m) => m.Pagos),
+  },
+  {
     path: 'control-acceso',
+    canActivate: [authGuard],
+    data: { rol: 'OPERADOR' },
     title: 'Control de acceso | Autos Colombia',
     loadComponent: () => import('./control-acceso/control-acceso').then((m) => m.ControlAcceso),
   },
   {
     path: 'gestion/operadores',
+    canActivate: [authGuard],
+    data: { rol: 'ADMINISTRADOR' },
     title: 'Operadores | Autos Colombia',
     loadComponent: () => import('./operadores/operadores').then((m) => m.Operadores),
   },
   {
+    path: 'gestion/clientes',
+    canActivate: [authGuard],
+    data: { rol: 'OPERADOR' },
+    title: 'Clientes | Autos Colombia',
+    loadComponent: () => import('./clientes/clientes').then((m) => m.Clientes),
+  },
+  {
     path: 'gestion/celdas',
+    canActivate: [authGuard],
+    data: { rol: 'ADMINISTRADOR' },
     title: 'Celdas | Autos Colombia',
     loadComponent: () => import('./celdas/celdas').then((m) => m.Celdas),
   },
-  { path: '', pathMatch: 'full', loadComponent: () => import('./home/home').then((m) => m.Home) },
+  {
+    path: '',
+    canActivate: [authGuard],
+    data: { rol: 'OPERADOR' },
+    pathMatch: 'full',
+    title: 'Dashboard | Autos Colombia',
+    loadComponent: () => import('./home/home').then((m) => m.Home),
+  },
   {
     path: 'gestion/vehiculos',
+    canActivate: [authGuard],
+    data: { rol: 'OPERADOR' },
     title: 'Vehículos | Autos Colombia',
     loadComponent: () => import('./vehiculos/vehiculos').then((m) => m.Vehiculos),
   },

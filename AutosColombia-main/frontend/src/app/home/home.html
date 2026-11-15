@@ -1,57 +1,159 @@
-<section class="welcome" aria-labelledby="welcome-title">
-  <div class="illustration">
-    <img
-      class="hero-photo"
-      src="/images/inicio.jpg"
-      alt="Una fila de automóviles frente a cámara en un espacio oscuro."
-      fetchpriority="high"
-    />
-    <span class="parking-label">AUTOS COLOMBIA</span>
-    <span class="illustration-caption">Cada entrada. Cada salida.</span>
-  </div>
+<section class="dashboard" aria-labelledby="dashboard-title">
+  <header class="dashboard-heading">
+    <div>
+      <span class="eyebrow">PANEL DE CONTROL</span>
+      <h1 id="dashboard-title">El parqueadero de un vistazo</h1>
+      <p>Ocupación y disponibilidad de Autos Colombia.</p>
+    </div>
+    <div class="dashboard-actions">
+      <a class="primary-link" routerLink="/control-acceso"
+        >Entradas y salidas <span aria-hidden="true">↗</span></a
+      >
+      <button type="button" class="refresh" (click)="actualizar()" [disabled]="loading()">
+        {{ loading() ? 'Actualizando…' : 'Actualizar resumen' }}
+      </button>
+    </div>
+  </header>
 
-  <div class="welcome-copy">
-    <span class="eyebrow">ORDEN EN CADA MOVIMIENTO</span>
-    <h1 id="welcome-title">Autos Colombia</h1>
-    <p class="description">Control de entradas y salidas de vehículos</p>
-    <p class="supporting-copy">
-      Un espacio para organizar el movimiento de vehículos y mantener la información a mano.
-    </p>
-    <a class="contact-button" routerLink="/control-acceso">Empezar gestión</a>
+  <div class="live-status">
     <p
       class="connection-status"
       [class.available]="connectionState() === 'available'"
       [class.unavailable]="connectionState() === 'unavailable'"
       role="status"
       aria-live="polite"
-      aria-atomic="true"
     >
-      <span class="status-dot" aria-hidden="true"></span>
-      {{ connectionMessage() }}
+      <span class="status-dot" aria-hidden="true"></span>{{ connectionMessage() }}
     </p>
+    @if (resumen()) {
+      <p>Actualizado {{ actualizado() }} · Bogotá · Cada 10 segundos</p>
+    }
   </div>
-</section>
+  @if (error()) {
+    <p class="error-notice" role="alert">{{ error() }}</p>
+  }
 
-<section class="overview" aria-labelledby="overview-title">
-  <div class="section-heading">
-    <h2 id="overview-title">Una gestión más organizada</h2>
-    <p>Lo esencial, en un solo lugar.</p>
-  </div>
-  <div class="feature-grid">
-    <article class="feature">
-      <span class="feature-number" aria-hidden="true">01</span>
-      <h3>Entradas</h3>
-      <p>El punto de partida para el control de cada vehículo.</p>
+  <div class="metric-grid" [attr.aria-busy]="loading()" aria-label="Resumen de ocupación">
+    <article class="metric metric-dark">
+      <h2>Vehículos dentro</h2>
+      <strong>{{ resumen()?.ocupadas ?? '—' }}</strong>
+      <span>Celdas ocupadas</span>
     </article>
-    <article class="feature">
-      <span class="feature-number" aria-hidden="true">02</span>
-      <h3>Salidas</h3>
-      <p>El cierre de cada recorrido, con orden y claridad.</p>
+    <article class="metric">
+      <h2>Espacios disponibles</h2>
+      <strong class="available-number">{{ resumen()?.libres ?? '—' }}</strong>
+      <span>Listos para un ingreso</span>
     </article>
-    <article class="feature">
-      <span class="feature-number" aria-hidden="true">03</span>
-      <h3>Información</h3>
-      <p>Una visión clara para acompañar la operación diaria.</p>
+    <article class="metric">
+      <h2>Ocupación actual</h2>
+      <strong>{{ resumen() ? resumen()!.porcentaje + '%' : '—' }}</strong>
+      <span>De {{ resumen()?.total ?? '—' }} celdas del parqueadero</span>
     </article>
   </div>
+
+  @if (resumen(); as data) {
+    <div class="dashboard-grid">
+      <section class="dashboard-panel" aria-labelledby="availability-title">
+        <div class="panel-heading">
+          <h2 id="availability-title">Disponibilidad por vehículo</h2>
+          <a routerLink="/control-acceso" fragment="occupancy-title"
+            >Escoger celda <span aria-hidden="true">↗</span></a
+          >
+        </div>
+        @for (sector of data.sectores; track sector.tipo) {
+          <div class="sector-summary">
+            <div class="sector-heading">
+              <div>
+                <h3>{{ sector.nombre }}</h3>
+                <span>{{ sector.rango }}</span>
+              </div>
+              <p>
+                <strong>{{ sector.libres }}</strong> libres de {{ sector.total }}
+              </p>
+            </div>
+            <meter
+              min="0"
+              [max]="sector.total || 1"
+              [value]="sector.ocupadas"
+              [attr.aria-label]="
+                sector.nombre + ': ' + sector.ocupadas + ' ocupadas de ' + sector.total
+              "
+            ></meter>
+            <p class="sector-caption">
+              {{ sector.ocupadas }} ocupadas · {{ sector.libres }} disponibles
+            </p>
+          </div>
+        }
+      </section>
+      <section class="dashboard-panel occupancy-panel" aria-labelledby="occupancy-summary-title">
+        <h2 id="occupancy-summary-title">Estado del parqueadero</h2>
+        <div
+          class="occupancy-ring"
+          role="img"
+          [style.--occupation]="data.porcentaje + '%'"
+          [attr.aria-label]="
+            data.porcentaje +
+            '% de ocupación, ' +
+            data.ocupadas +
+            ' celdas ocupadas y ' +
+            data.libres +
+            ' libres'
+          "
+        >
+          <div>
+            <strong>{{ data.porcentaje }}<small>%</small></strong
+            ><span>de ocupación</span>
+          </div>
+        </div>
+        <div class="ring-legend">
+          <span><i class="occupied-dot" aria-hidden="true"></i>{{ data.ocupadas }} ocupadas</span
+          ><span><i class="free-dot" aria-hidden="true"></i>{{ data.libres }} libres</span>
+        </div>
+      </section>
+    </div>
+    <section class="dashboard-panel inside-panel" aria-labelledby="inside-title">
+      <div class="panel-heading">
+        <h2 id="inside-title">Vehículos en el parqueadero</h2>
+        <a routerLink="/control-acceso">Gestionar salida <span aria-hidden="true">↗</span></a>
+      </div>
+      @if (data.dentro.length) {
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Placa</th>
+                <th scope="col">Celda</th>
+                <th scope="col">Tipo de espacio</th>
+                <th scope="col">Entrada en Bogotá</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (celda of data.dentro; track celda.id) {
+                <tr>
+                  <th scope="row">{{ celda.placa }}</th>
+                  <td>
+                    <span class="cell-code">{{ celda.codigo }}</span>
+                  </td>
+                  <td>{{ celda.tipo }}</td>
+                  <td>{{ celda.entrada ? fecha(celda.entrada) : '—' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        @if (data.ocupadas > 5) {
+          <p class="table-note">
+            Se muestran los 5 ingresos más recientes que siguen dentro, de
+            {{ data.ocupadas }} vehículos.
+          </p>
+        }
+      } @else {
+        <p class="empty-state">
+          El parqueadero está vacío. Puedes registrar la primera entrada desde Control de acceso.
+        </p>
+      }
+    </section>
+  } @else if (loading()) {
+    <p class="empty-state">Consultando el estado del parqueadero…</p>
+  }
 </section>

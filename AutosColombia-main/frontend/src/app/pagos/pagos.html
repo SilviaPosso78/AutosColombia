@@ -1,0 +1,368 @@
+<section class="management payments-management" aria-labelledby="payments-title">
+  <header class="heading">
+    <div>
+      <span class="eyebrow">MENSUALIDADES POR VEHÍCULO</span>
+      <h1 id="payments-title">Pagos y mensualidades</h1>
+      <p>Registra pagos, consulta vigencias y revisa los avisos a clientes.</p>
+    </div>
+    <button type="button" class="primary" (click)="nuevo()" [disabled]="saving()">
+      Registrar pago
+    </button>
+  </header>
+  @if (success()) {
+    <p class="notice success" role="status">{{ success() }}</p>
+  }
+  @if (operadoresError()) {
+    <p class="notice error" role="alert">
+      {{ operadoresError() }}
+      <button type="button" (click)="cargarOperadores()">Actualizar operadores</button>
+    </p>
+  }
+  @if (configError()) {
+    <p class="notice error" role="alert">
+      {{ configError() }}
+      <button type="button" (click)="cargarConfiguracion()">Revisar conexión</button>
+    </p>
+  }
+  <section class="panel whatsapp-status" aria-labelledby="whatsapp-title">
+    <div>
+      <h2 id="whatsapp-title">Recordatorios por WhatsApp</h2>
+      <p>5 días antes y el día del vencimiento.</p>
+    </div>
+    @if (configuracion(); as config) {
+      @if (config.configurado && config.habilitado) {
+        <p class="connection-ready">Envío automático habilitado</p>
+      } @else {
+        <p>
+          Envío automático pendiente de configurar WhatsApp Business. Los avisos quedan programados
+          y puedes preparar el mensaje desde la pestaña Avisos.
+        </p>
+      }
+    } @else {
+      <p>Comprobando configuración…</p>
+    }
+  </section>
+  @if (showForm()) {
+    <section class="panel" aria-labelledby="payment-form-title">
+      <h2 id="payment-form-title">Registrar pago de mensualidad</h2>
+      <form [formGroup]="form" (ngSubmit)="guardar()">
+        <fieldset [disabled]="saving()">
+          <legend class="sr-only">Datos del pago</legend>
+          <div class="plate-search">
+            <div class="field">
+              <label for="payment-plate">Placa</label
+              ><input id="payment-plate" type="text" formControlName="placa" />
+            </div>
+            <button type="button" (click)="buscarVehiculo()" [disabled]="consultando()">
+              {{ consultando() ? 'Buscando…' : 'Buscar vehículo' }}
+            </button>
+          </div>
+          @if (seleccionado(); as vehicle) {
+            <p class="selected-vehicle">
+              <strong>{{ vehicle.placa }} · {{ vehicle.tipo }}</strong
+              ><br />Cliente responsable {{ vehicle.cliente_nombre ?? 'Sin cliente asociado' }} ·
+              {{ nombreEstado(vehicle.estado) }}
+            </p>
+            @if (!vehicle.cliente_id) {
+              <p class="notice error">
+                Asocia primero un cliente responsable en
+                <a routerLink="/gestion/vehiculos">Vehículos</a>.
+              </p>
+            }
+          }
+          <div class="form-grid">
+            <div class="field">
+              <label for="payment-value">Mensualidad fija (COP)</label
+              ><input
+                id="payment-value"
+                type="text"
+                readonly
+                [value]="seleccionado() ? moneda(seleccionado()!.tarifa_mensual) : ''"
+              />
+              <span class="hint">Carros y camionetas $250.000 · Motos $100.000.</span>
+            </div>
+            <div class="field">
+              <label for="payment-date">Fecha del pago</label
+              ><input id="payment-date" type="date" formControlName="fecha_pago" />
+            </div>
+            <div class="field">
+              <label for="period-start">Inicio de vigencia</label
+              ><input id="period-start" type="date" formControlName="inicio" />
+            </div>
+            <div class="field">
+              <label for="period-end">Vencimiento inclusive</label
+              ><input
+                id="period-end"
+                type="date"
+                formControlName="fin"
+                [min]="form.controls.inicio.value"
+              />
+            </div>
+            <div class="field">
+              <label for="payment-operator">Registrado por</label
+              ><select id="payment-operator" formControlName="operador_id">
+                <option [ngValue]="null">Selecciona un operador</option>
+                @for (operador of operadores(); track operador.id) {
+                  <option [ngValue]="operador.id">{{ operador.nombre }}</option>
+                }
+              </select>
+            </div>
+          </div>
+          <p class="hint">
+            El periodo incluye el día del vencimiento. Se registra un pago independiente por
+            vehículo. Las renovaciones sugeridas comienzan después del periodo pagado.
+          </p>
+          @if (formError()) {
+            <p class="notice error" role="alert">{{ formError() }}</p>
+          }
+          <div class="actions">
+            <button
+              class="primary"
+              type="submit"
+              [disabled]="consultando() || !seleccionado()?.cliente_id || !!operadoresError()"
+            >
+              {{ saving() ? 'Guardando…' : 'Guardar pago' }}</button
+            ><button type="button" (click)="showForm.set(false)">Cancelar</button>
+          </div>
+        </fieldset>
+      </form>
+    </section>
+  }
+  <section class="panel list" aria-label="Consulta de mensualidades y pagos">
+    <nav class="tabs" aria-label="Consultas de pagos">
+      <button
+        type="button"
+        [class.active]="tab() === 'mensualidades'"
+        [attr.aria-current]="tab() === 'mensualidades' ? 'page' : null"
+        (click)="cambiarTab('mensualidades')"
+        [disabled]="saving()"
+      >
+        Mensualidades
+      </button>
+      <button
+        type="button"
+        [class.active]="tab() === 'historial'"
+        [attr.aria-current]="tab() === 'historial' ? 'page' : null"
+        (click)="cambiarTab('historial')"
+        [disabled]="saving()"
+      >
+        Historial de pagos
+      </button>
+      <button
+        type="button"
+        [class.active]="tab() === 'avisos'"
+        [attr.aria-current]="tab() === 'avisos' ? 'page' : null"
+        (click)="cambiarTab('avisos')"
+        [disabled]="saving()"
+      >
+        Avisos
+      </button>
+    </nav>
+    @if (tab() !== 'avisos') {
+      <form class="filters" [formGroup]="filtro" (ngSubmit)="cargar()">
+        <div class="field">
+          <label for="filter-plate">Buscar por placa</label
+          ><input id="filter-plate" formControlName="placa" />
+        </div>
+        @if (tab() === 'mensualidades') {
+          <div class="field">
+            <label for="filter-status">Vigencia</label
+            ><select id="filter-status" formControlName="estado">
+              <option value="">Todas</option>
+              @for (estado of estados; track estado.valor) {
+                <option [value]="estado.valor">{{ estado.nombre }}</option>
+              }
+            </select>
+          </div>
+        }
+        <button type="submit" [disabled]="loading()">Buscar</button>
+      </form>
+    }
+    <div class="list-heading">
+      <p>{{ total() }} registros</p>
+      <button
+        type="button"
+        (click)="cargar(offset()); cargarConfiguracion()"
+        [disabled]="loading() || saving()"
+      >
+        Actualizar listado
+      </button>
+    </div>
+    @if (loading()) {
+      <p role="status">Cargando registros…</p>
+    } @else if (error()) {
+      <p class="notice error" role="alert">{{ error() }}</p>
+    } @else {
+      <div class="table-scroll">
+        @switch (tab()) {
+          @case ('mensualidades') {
+            <table>
+              <caption class="sr-only">
+                Vigencia de mensualidades por vehículo
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Vehículo</th>
+                  <th scope="col">Cliente</th>
+                  <th scope="col">Periodo</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col">Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of mensualidades(); track item.vehiculo_id) {
+                  <tr>
+                    <th scope="row">
+                      {{ item.placa }}<small>{{ item.tipo }}</small>
+                    </th>
+                    <td>{{ item.cliente_nombre ?? 'Sin cliente asociado' }}</td>
+                    <td>{{ fecha(item.inicio) }}<br />{{ fecha(item.fin) }}</td>
+                    <td>
+                      <span
+                        class="status"
+                        [class.expired]="item.estado === 'VENCIDA'"
+                        [class.warning]="item.estado === 'POR_VENCER'"
+                        >{{ nombreEstado(item.estado) }}</span
+                      >
+                    </td>
+                    <td>
+                      <button type="button" (click)="nuevo(item)" [disabled]="saving()">
+                        {{ item.pago_id ? 'Renovar' : 'Registrar pago' }}
+                      </button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5">No hay vehículos con estos filtros.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+          @case ('historial') {
+            <table>
+              <caption class="sr-only">
+                Historial de pagos registrados
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Pago</th>
+                  <th scope="col">Vehículo y cliente</th>
+                  <th scope="col">Valor</th>
+                  <th scope="col">Fecha de pago</th>
+                  <th scope="col">Periodo cubierto</th>
+                  <th scope="col">Registrado por</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of historial(); track item.id) {
+                  <tr>
+                    <th scope="row">#{{ item.id }}</th>
+                    <td>
+                      <strong>{{ item.placa }}</strong
+                      ><small>{{ item.cliente_nombre }}</small>
+                    </td>
+                    <td>{{ moneda(item.valor) }}</td>
+                    <td>{{ fecha(item.fecha_pago) }}</td>
+                    <td>{{ fecha(item.inicio) }}<br />{{ fecha(item.fin) }}</td>
+                    <td>{{ item.operador_nombre }}</td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="6">Aún no hay pagos registrados con estos filtros.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+          @case ('avisos') {
+            <table>
+              <caption class="sr-only">
+                Recordatorios de mensualidad por WhatsApp
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Vehículo y cliente</th>
+                  <th scope="col">Programado para</th>
+                  <th scope="col">Vencimiento</th>
+                  <th scope="col">Estado</th>
+                  <th scope="col">Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of avisos(); track item.id) {
+                  <tr>
+                    <th scope="row">
+                      {{ item.placa }}<small>{{ item.cliente_nombre }}</small>
+                    </th>
+                    <td>
+                      {{ fecha(item.programado_para)
+                      }}<small>{{ item.dias_antes ? '5 días antes' : 'Día de vencimiento' }}</small>
+                    </td>
+                    <td>{{ fecha(item.fin) }}</td>
+                    <td>
+                      {{ nombreEstado(item.estado) }}
+                      @if (item.detalle) {
+                        <small>{{ item.detalle }}</small>
+                      }
+                    </td>
+                    <td>
+                      @if (avisoManualDisponible(item)) {
+                        <a [href]="whatsapp(item)" target="_blank" rel="noopener noreferrer"
+                          >Abrir WhatsApp</a
+                        >
+                      } @else if (!item.telefono) {
+                        <span>Revisa el teléfono del cliente</span>
+                      }
+                      @if (item.estado === 'ERROR') {
+                        <button
+                          type="button"
+                          (click)="reintentar(item)"
+                          [disabled]="
+                            saving() ||
+                            !configuracion()?.habilitado ||
+                            !configuracion()?.configurado
+                          "
+                        >
+                          Reintentar automático
+                        </button>
+                      }
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5">Los avisos se programan al registrar un pago.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        }
+      </div>
+      @if (tab() === 'avisos') {
+        <p class="hint">
+          Abrir WhatsApp prepara el mensaje para que confirmes su envío. El estado automático cambia
+          a Entregado cuando Meta lo confirma.
+        </p>
+      }
+    }
+    <nav class="pagination" aria-label="Paginación de pagos">
+      <span>Página {{ page() }} de {{ pages() }}</span>
+      <div class="actions">
+        <button
+          type="button"
+          (click)="cargar(offset() - limit)"
+          [disabled]="loading() || offset() === 0"
+        >
+          Anterior</button
+        ><button
+          type="button"
+          (click)="cargar(offset() + limit)"
+          [disabled]="loading() || offset() + limit >= total()"
+        >
+          Siguiente
+        </button>
+      </div>
+    </nav>
+  </section>
+</section>

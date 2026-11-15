@@ -1,39 +1,69 @@
-<div class="page-shell">
+﻿<div class="page-shell">
   <header class="site-header">
-    <a class="brand" routerLink="/" aria-label="Autos Colombia, inicio">
-      <span class="brand-name">Autos<br />Colombia</span>
-      <span class="brand-description">
-        Un espacio para organizar el movimiento de vehículos y mantener la información a mano.
-      </span>
-    </a>
+    <a
+      class="brand"
+      [routerLink]="auth.usuario() ? auth.destino() : '/login'"
+      aria-label="Autos Colombia, inicio"
+      ><span class="brand-name">Autos<br />Colombia</span></a
+    >
     <div class="header-content">
-      <nav aria-label="Navegación principal">
-        <a
-          routerLink="/"
-          routerLinkActive="active"
-          [routerLinkActiveOptions]="{ exact: true }"
-          ariaCurrentWhenActive="page"
-          >Inicio</a
-        >
-        <a routerLink="/control-acceso" routerLinkActive="active" ariaCurrentWhenActive="page"
-          >Control de acceso</a
-        >
-        <a routerLink="/gestion/operadores" routerLinkActive="active" ariaCurrentWhenActive="page"
-          >Operadores</a
-        >
-        <a routerLink="/gestion/celdas" routerLinkActive="active" ariaCurrentWhenActive="page"
-          >Celdas</a
-        >
-        <a routerLink="/gestion/vehiculos" routerLinkActive="active" ariaCurrentWhenActive="page"
-          >Vehículos</a
-        >
-      </nav>
-      <p class="header-message">Registra entradas, consulta vehículos y confirma salidas.</p>
+      @if (auth.usuario(); as user) {
+        <nav aria-label="Navegación principal">
+          @if (user.rol === 'ADMINISTRADOR') {
+            <a routerLink="/gestion/usuarios" routerLinkActive="active" ariaCurrentWhenActive="page"
+              >Crear usuarios</a
+            >
+            <a routerLink="/gestion/celdas" routerLinkActive="active" ariaCurrentWhenActive="page"
+              >Gestionar celdas</a
+            >
+          } @else {
+            <a
+              routerLink="/"
+              routerLinkActive="active"
+              [routerLinkActiveOptions]="{ exact: true }"
+              ariaCurrentWhenActive="page"
+              >Inicio</a
+            >
+            <a routerLink="/control-acceso" routerLinkActive="active" ariaCurrentWhenActive="page"
+              >Control de acceso</a
+            >
+            <a
+              routerLink="/gestion/movimientos"
+              routerLinkActive="active"
+              ariaCurrentWhenActive="page"
+              >Movimientos</a
+            >
+            <a routerLink="/gestion/pagos" routerLinkActive="active" ariaCurrentWhenActive="page"
+              >Pagos</a
+            >
+            <a
+              routerLink="/gestion/vehiculos"
+              routerLinkActive="active"
+              ariaCurrentWhenActive="page"
+              >Vehículos</a
+            >
+            <a routerLink="/gestion/clientes" routerLinkActive="active" ariaCurrentWhenActive="page"
+              >Clientes</a
+            >
+          }
+        </nav>
+        <div class="session-bar">
+          <a routerLink="/cuenta/password" routerLinkActive="active">Cambiar contraseña</a>
+          <span
+            >{{ user.nombre }} ·
+            {{ user.rol === 'ADMINISTRADOR' ? 'Administrador' : 'Operador' }}</span
+          ><button type="button" (click)="logout()" [disabled]="closing()">
+            {{ closing() ? 'Cerrando…' : 'Cerrar sesión' }}
+          </button>
+        </div>
+        @if (logoutError()) {
+          <p role="alert" class="notice error">{{ logoutError() }}</p>
+        }
+      }
     </div>
   </header>
   <main><router-outlet /></main>
   <footer class="site-footer">
-    <span>Autos Colombia</span>
-    <span>Control vehicular con claridad.</span>
+    <span>Autos Colombia</span><span>Gestión del parqueadero</span>
   </footer>
 </div>

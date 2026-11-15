@@ -1,50 +1,9 @@
-:host {
+﻿:host {
   display: block;
 }
-
 .cells-management > .panel {
   grid-column: 1 / -1;
 }
-
-.cells-management > section[aria-labelledby='form-title'] {
-  padding: 26px 32px;
-}
-
-.cells-management > section[aria-labelledby='form-title'] .form-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px 28px;
-}
-
-.cells-management .list table {
-  table-layout: fixed;
-}
-
-.cells-management .list th:first-child,
-.cells-management .list td:first-child {
-  width: 30%;
-}
-
-.cells-management .list th:nth-child(2),
-.cells-management .list td:nth-child(2) {
-  width: 42%;
-}
-
-.cells-management .list th:last-child,
-.cells-management .list td:last-child {
-  width: 28%;
-}
-
-@media (max-width: 600px) {
-  .cells-management > section[aria-labelledby='form-title'] {
-    padding: 18px;
-  }
-
-  .cells-management > section[aria-labelledby='form-title'] .form-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .cells-management .list table {
-    min-width: 540px;
-  }
+.list form {
+  margin-bottom: 24px;
 }

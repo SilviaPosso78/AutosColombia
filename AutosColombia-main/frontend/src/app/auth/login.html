@@ -1,0 +1,94 @@
+﻿<section class="login-layout" aria-labelledby="login-title">
+  <aside class="login-brand" aria-label="Autos Colombia">
+    <div class="brand-wordmark">
+      Autos<br />Colombia<span class="brand-period" aria-hidden="true">.</span>
+    </div>
+    <div class="brand-purpose">
+      <p>Parqueadero por mensualidad</p>
+      <h2>Control de acceso<br />y administración.</h2>
+    </div>
+  </aside>
+  <div class="login-content">
+    <div class="login-card">
+      <header>
+        <h1 id="login-title">Iniciar sesión</h1>
+        <p>Ingresa con la cuenta que te asignó el administrador.</p>
+      </header>
+      @if (passwordActualizada()) {
+        <p class="password-success" role="status">
+          Contraseña actualizada. Ingresa con tu nueva contraseña.
+        </p>
+      }
+      <form [formGroup]="form" (ngSubmit)="entrar()" novalidate [attr.aria-busy]="loading()">
+        <fieldset [disabled]="loading()">
+          <legend class="sr-only">Datos de acceso</legend>
+          <div class="login-field">
+            <label for="login-user">Usuario</label>
+            <input
+              id="login-user"
+              formControlName="usuario"
+              autocomplete="username"
+              autocapitalize="none"
+              spellcheck="false"
+              maxlength="80"
+              placeholder="Tu usuario de acceso"
+              [attr.aria-invalid]="form.controls.usuario.touched && form.controls.usuario.invalid"
+              aria-describedby="login-user-error"
+            />
+            @if (form.controls.usuario.touched && form.controls.usuario.invalid) {
+              <p id="login-user-error" class="input-error">
+                Introduce tu usuario de acceso de 3 a 80 caracteres.
+              </p>
+            }
+          </div>
+          <div class="login-field">
+            <label for="login-password">Contraseña</label>
+            <div class="password-control">
+              <input
+                id="login-password"
+                [type]="showPassword() ? 'text' : 'password'"
+                formControlName="password"
+                autocomplete="current-password"
+                maxlength="128"
+                placeholder="Tu contraseña"
+                [attr.aria-invalid]="
+                  form.controls.password.touched && form.controls.password.invalid
+                "
+                aria-describedby="login-password-error login-caps"
+                (keyup)="capsLock.set($event.getModifierState('CapsLock'))"
+                (blur)="capsLock.set(false)"
+              /><button
+                type="button"
+                class="password-toggle"
+                (click)="showPassword.set(!showPassword())"
+                [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                [attr.aria-pressed]="showPassword()"
+              >
+                {{ showPassword() ? 'Ocultar' : 'Mostrar' }}
+              </button>
+            </div>
+            @if (form.controls.password.touched && form.controls.password.invalid) {
+              <p id="login-password-error" class="input-error">Introduce tu contraseña.</p>
+            }
+            @if (capsLock()) {
+              <p id="login-caps" class="caps-hint" role="status">Bloq Mayús está activado.</p>
+            }
+          </div>
+          @if (error()) {
+            <p class="login-error" role="alert">{{ error() }}</p>
+          }
+          <button class="login-submit" type="submit" [disabled]="loading()">
+            {{ loading() ? 'Iniciando sesión…' : 'Ingresar' }}<span aria-hidden="true">→</span>
+          </button>
+        </fieldset>
+      </form>
+      <div class="registration-help">
+        <h2>¿Necesitas una cuenta?</h2>
+        <p>
+          Solicita al administrador del parqueadero que registre tu usuario y te asigne el rol
+          correspondiente.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>

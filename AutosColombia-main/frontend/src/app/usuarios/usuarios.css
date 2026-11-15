@@ -1,0 +1,166 @@
+﻿.users-management {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 1120px;
+  margin: 0 auto;
+}
+.registration-panel {
+  width: 100%;
+}
+.registration-heading {
+  padding-bottom: 22px;
+}
+.registration-heading p {
+  font-size: 13px;
+}
+fieldset {
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.role-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.role-options legend {
+  padding: 0 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+}
+.role-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  border: 1px solid #d6cbb8;
+  border-radius: 8px;
+  padding: 17px;
+  background: #fffdfa;
+  cursor: pointer;
+}
+.role-option.selected {
+  border-color: #7b693e;
+  background: #f1ecdf;
+}
+.role-option input {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  min-height: 0;
+  margin: 3px 0 0;
+  accent-color: #635430;
+  flex-shrink: 0;
+}
+.role-option strong {
+  display: block;
+  font-size: 14px;
+}
+.role-option small {
+  display: block;
+  margin-top: 7px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.form-section {
+  border-top: 1px solid #ded5c7;
+  margin-top: 28px;
+  padding-top: 10px;
+}
+.form-section h3 {
+  margin: 12px 0 20px;
+  font-size: 15px;
+}
+.full-width {
+  grid-column: 1 / -1;
+}
+.registration-panel .form-grid {
+  column-gap: 22px;
+}
+.registration-panel .field {
+  margin-bottom: 5px;
+}
+.registration-panel input:not([type='checkbox']):not([type='radio']),
+.registration-panel select {
+  min-height: 46px;
+  border-color: #c8beaa;
+  background: #fffdfa;
+  border-radius: 6px;
+}
+.registration-panel input[aria-invalid='true'] {
+  border-color: #a5412c !important;
+}
+.password-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-top: 6px;
+}
+.password-options label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.password-options input {
+  padding: 0;
+  width: 16px;
+  min-height: 16px;
+  margin: 0;
+  accent-color: #635430;
+}
+.registration-actions {
+  border-top: 1px solid #ded5c7;
+  margin-top: 28px;
+  padding-top: 22px;
+  display: flex;
+  justify-content: flex-end;
+}
+.registration-actions .primary {
+  padding: 12px 28px;
+  min-height: 46px;
+  background: #252c26;
+  border-color: #252c26;
+  color: #faf7f1;
+}
+.user-count {
+  display: inline-block;
+  font: 500 14px var(--sans);
+  color: var(--muted);
+  margin-left: 8px;
+}
+.role-label {
+  display: inline-block;
+  border-radius: 5px;
+  padding: 5px 9px;
+  background: #e9efe9;
+  color: #31543c;
+  font-size: 12px;
+}
+.role-label.admin {
+  background: #eee6d5;
+  color: #665023;
+}
+.inline-retry {
+  padding: 2px 5px;
+  font-size: 12px;
+}
+@media (min-width: 1000px) {
+  .registration-panel form {
+    max-width: 800px;
+  }
+}
+@media (max-width: 600px) {
+  .role-options {
+    grid-template-columns: 1fr;
+  }
+  .password-options {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .registration-actions .primary {
+    width: 100%;
+  }
+}
