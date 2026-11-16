@@ -1,0 +1,4 @@
+Autos Colombia actividad 2
+Abrir Autos_Colombia_Actividad_2.mdj en StarUML. Contiene 2 casos de uso, 12 secuencias y 2 diagramas de componentes.
+Los 7 mockups SVG se pueden importar a Figma. Son wireframes con datos ficticios.
+Los identificadores de diagramas son propios de esta entrega. La trazabilidad con los casos US, PE y CE del Excel se incluye en el Word.

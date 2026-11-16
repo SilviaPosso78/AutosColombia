@@ -3,6 +3,13 @@ import { authGuard, loginGuard } from './auth/auth.guard';
 
 export const routes: Routes = [
   {
+    path: 'disponibilidad',
+    canActivate: [authGuard],
+    data: { rol: 'OPERADOR' },
+    title: 'Disponibilidad de celdas | Autos Colombia',
+    loadComponent: () => import('./disponibilidad/disponibilidad').then((m) => m.Disponibilidad),
+  },
+  {
     path: 'cuenta/password',
     canActivate: [authGuard],
     title: 'Cambiar contraseña | Autos Colombia',

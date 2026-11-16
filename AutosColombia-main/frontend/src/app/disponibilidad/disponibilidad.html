@@ -1,0 +1,187 @@
+<section class="management availability-management" aria-labelledby="availability-title">
+  <header class="heading">
+    <div>
+      <h1 id="availability-title">Disponibilidad de celdas</h1>
+      <p>Consulta los espacios libres, sus ocupantes y movimientos.</p>
+    </div>
+    <a routerLink="/control-acceso">Registrar entrada o salida</a>
+  </header>
+  <section class="panel" aria-label="Resumen de disponibilidad" [attr.aria-busy]="loading()">
+    <div class="list-heading">
+      <h2>Estado del parqueadero</h2>
+      <button type="button" (click)="actualizar()" [disabled]="loading()">
+        {{ loading() ? 'Actualizando…' : 'Actualizar disponibilidad' }}
+      </button>
+    </div>
+    @if (actualizado()) {
+      <div class="availability-summary">
+        <p>
+          <strong>{{ libres() }}</strong> Libres
+        </p>
+        <p>
+          <strong>{{ ocupadas() }}</strong> Ocupadas
+        </p>
+        <p>
+          <strong>{{ celdas().length }}</strong> En total
+        </p>
+      </div>
+      <p class="hint">
+        Última actualización {{ actualizado() }} (Bogotá). Consulta automática cada 10 segundos.
+      </p>
+    }
+    @if (error()) {
+      <p class="notice error" role="alert">{{ error() }}</p>
+    }
+    @if (loading() && !actualizado()) {
+      <p role="status">Consultando celdas…</p>
+    }
+    <div class="form-grid">
+      <div class="field">
+        <label for="availability-type">Tipo de espacio</label
+        ><select
+          id="availability-type"
+          [value]="tipo()"
+          (change)="tipo.set($any($event.target).value)"
+        >
+          <option value="">Todos los tipos</option>
+          <option value="Motocicletas">Motocicletas</option>
+          <option value="Automóviles y camionetas">Automóviles y camionetas</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="availability-state">Estado</label
+        ><select
+          id="availability-state"
+          [value]="estado()"
+          (change)="estado.set($any($event.target).value)"
+        >
+          <option value="">Todos los estados</option>
+          <option value="LIBRE">Libres</option>
+          <option value="OCUPADA">Ocupadas</option>
+        </select>
+      </div>
+    </div>
+  </section>
+  @if (seleccionada(); as celda) {
+    <section
+      class="panel list"
+      id="cell-history"
+      tabindex="-1"
+      aria-labelledby="cell-history-title"
+      [attr.aria-busy]="historyLoading()"
+    >
+      <div class="list-heading">
+        <h2 id="cell-history-title">Historial de {{ celda.codigo }}</h2>
+        <div class="actions">
+          <button type="button" (click)="verHistorial(celda)" [disabled]="historyLoading()">
+            Actualizar historial</button
+          ><button type="button" (click)="cerrarHistorial()">Cerrar</button>
+        </div>
+      </div>
+      @if (historyLoading()) {
+        <p role="status">Consultando movimientos…</p>
+      } @else if (historyError()) {
+        <p role="alert" class="notice error">{{ historyError() }}</p>
+      } @else if (historial(); as data) {
+        <p>
+          {{ data.total }} movimientos · {{ data.entradas }} entradas · {{ data.salidas }} salidas
+        </p>
+        <div class="table-scroll">
+          <table>
+            <caption class="sr-only">
+              Movimientos de la celda
+              {{
+                celda.codigo
+              }}
+              en hora de Bogotá
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Fecha y hora</th>
+                <th scope="col">Movimiento</th>
+                <th scope="col">Placa</th>
+                <th scope="col">Operador</th>
+                <th scope="col">Tiquete</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of data.items; track item.estancia_id + '-' + item.movimiento) {
+                <tr>
+                  <td>{{ fecha(item.fecha) }} (Bogotá)</td>
+                  <td>{{ item.movimiento === 'ENTRADA' ? 'Entrada' : 'Salida' }}</td>
+                  <th scope="row">{{ item.placa }}</th>
+                  <td>{{ item.operador_nombre }}</td>
+                  <td>
+                    <a [routerLink]="['/tiquetes', item.estancia_id]">{{ item.tiquete_numero }}</a>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5">Esta celda no tiene movimientos registrados.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <nav class="pagination" aria-label="Paginación del historial">
+          <span>{{ data.total }} movimientos</span>
+          <div class="actions">
+            <button
+              type="button"
+              (click)="verHistorial(celda, data.offset - historyLimit)"
+              [disabled]="data.offset === 0"
+            >
+              Anterior</button
+            ><button
+              type="button"
+              (click)="verHistorial(celda, data.offset + historyLimit)"
+              [disabled]="data.offset + historyLimit >= data.total"
+            >
+              Siguiente
+            </button>
+          </div>
+        </nav>
+      }
+    </section>
+  }
+  @if (actualizado()) {
+    <section class="panel" aria-label="Panel de celdas">
+      <p class="hint">{{ visibles().length }} celdas coinciden con los filtros.</p>
+      @for (sector of sectores(); track sector.nombre) {
+        <section class="cell-sector" [attr.aria-label]="sector.nombre">
+          <h2>{{ sector.nombre }}</h2>
+          <div class="cell-grid">
+            @for (celda of sector.celdas; track celda.id) {
+              <article class="cell" [class.occupied]="celda.ocupada">
+                <div class="cell-heading">
+                  <h3>{{ celda.codigo }}</h3>
+                  <span>{{ celda.ocupada ? 'Ocupada' : 'Libre' }}</span>
+                </div>
+                @if (celda.ocupada) {
+                  <p class="plate">{{ celda.placa }}</p>
+                  <p class="hint">
+                    Entrada
+                    {{
+                      celda.entrada ? fecha(celda.entrada) + ' (Bogotá)' : 'Sin fecha registrada'
+                    }}
+                  </p>
+                } @else {
+                  <p class="hint">Disponible para ingreso</p>
+                }
+                <button
+                  type="button"
+                  (click)="verHistorial(celda)"
+                  [attr.aria-label]="'Ver historial de ' + celda.codigo"
+                >
+                  Ver historial
+                </button>
+              </article>
+            }
+          </div>
+        </section>
+      } @empty {
+        <p class="empty">No hay celdas que coincidan con los filtros.</p>
+      }
+    </section>
+  }
+</section>

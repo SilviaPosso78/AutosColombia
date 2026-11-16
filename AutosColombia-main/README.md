@@ -11,6 +11,7 @@ Sistema para un parqueadero por mensualidades: Angular 22, FastAPI y PostgreSQL.
 - **Operadores:** registro y actualización de los empleados del parqueadero.
 - **Vehículos:** placa única, tipo y cliente responsable.
 - **Celdas:** catálogo administrable con creación, búsqueda, edición y eliminación. Las celdas con estancias relacionadas conservan su historial. El catálogo inicial contiene 80 espacios.
+- **Disponibilidad para el operador:** panel en `/disponibilidad`, con motos arriba y automóviles y camionetas abajo, filtros por tipo y estado, actualización cada diez segundos e historial por celda con enlaces a los tiquetes.
 - **Pagos:** mensualidades, renovaciones e historial independiente por vehículo.
 - **Movimientos:** consulta bajo demanda por placa, fechas, celda, operador y
   entrada/salida; reimpresión de tiquetes.
