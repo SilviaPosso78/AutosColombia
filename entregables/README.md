@@ -15,3 +15,7 @@ Los modelos editables están en `Fuentes_Actividad_2/Autos_Colombia_Actividad_2.
 Las cuentas temporales de revisión se eliminaron y los registros de negocio del recorrido se revirtieron. No se añadieron suites ni herramientas de tests al repositorio.
 
 Esta revisión comprueba compilación y comportamiento HTTP; no equivale a una revisión visual completa del navegador ni sustituye las evidencias individuales de los 30 casos del Excel.
+
+## Ejecución individual del plan
+
+El [Excel diligenciado y sus evidencias](../outputs/validacion_20261115/README.md) registran la reejecución de los 30 casos contra la API y PostgreSQL. Las 30 comprobaciones de API aprobaron; el estado integral es 22 aprobados y 8 bloqueados por variantes visuales sin completar. El control de Chrome se detuvo automáticamente por no poder determinar la URL con suficiente confianza. El plan conserva estos pendientes y no se declara cerrado.
